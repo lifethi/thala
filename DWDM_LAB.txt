@@ -1,0 +1,616 @@
+SNOWFLAKE:(ACCOUNT)
+create database u2;
+use u2;
+-- Create the Customer_Segment table
+CREATE TABLE Customer_Segment (
+    Segment_ID INT PRIMARY KEY,
+    Segment_Name VARCHAR(100)
+);
+
+-- Create the Customer table
+CREATE TABLE Customer (
+    Customer_ID INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Address VARCHAR(255),
+    Segment_ID INT,
+    FOREIGN KEY (Segment_ID) REFERENCES Customer_Segment(Segment_ID)
+);
+
+-- Create the Account_Type table
+CREATE TABLE Account_Type (
+    Account_Type_ID INT PRIMARY KEY,
+    Account_Type_Name VARCHAR(100)
+);
+
+-- Create the Account table
+CREATE TABLE Account (
+    Account_ID INT PRIMARY KEY,
+    Account_Type_ID INT,
+    Opening_Date DATE,
+    Status VARCHAR(50),
+    FOREIGN KEY (Account_Type_ID) REFERENCES Account_Type(Account_Type_ID)
+);
+
+-- Create the Branch_Location table
+CREATE TABLE Branch_Location (
+    Location_ID INT PRIMARY KEY,
+    Location_Name VARCHAR(100)
+);
+
+-- Create the Branch table
+CREATE TABLE Branch (
+    Branch_ID INT PRIMARY KEY,
+    Branch_Name VARCHAR(100),
+    Location_ID INT,
+    Manager VARCHAR(100),
+    FOREIGN KEY (Location_ID) REFERENCES Branch_Location(Location_ID)
+);
+
+-- Create the Time_Dim table
+CREATE TABLE Time_Dim (
+    Date_ID INT PRIMARY KEY,
+    Date DATE,
+    Day INT,
+    Month INT,
+    Quarter INT,
+    Year INT
+);
+
+-- Create the Transaction_Fact table
+CREATE TABLE Transaction_Fact (
+    Transaction_ID INT PRIMARY KEY,
+    Account_ID INT,
+    Customer_ID INT,
+    Branch_ID INT,
+    Transaction_Amount DECIMAL(18, 2),
+    Transaction_Date INT,
+    FOREIGN KEY (Account_ID) REFERENCES Account(Account_ID),
+    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID),
+    FOREIGN KEY (Branch_ID) REFERENCES Branch(Branch_ID),
+    FOREIGN KEY (Transaction_Date) REFERENCES Time_Dim(Date_ID)
+);
+
+-- Insert values into Customer_Segment
+INSERT INTO Customer_Segment (Segment_ID, Segment_Name)
+VALUES
+(1, 'Retail'),
+(2, 'Corporate'),
+(3, 'Small Business');
+
+-- Insert values into Customer
+INSERT INTO Customer (Customer_ID, Name, Address, Segment_ID)
+VALUES
+(101, 'Alice Johnson', '123 Elm St, Springfield', 1),
+(102, 'Bob Smith', '456 Oak St, Shelbyville', 2),
+(103, 'Charlie Brown', '789 Maple St, Capital City', 3);
+
+-- Insert values into Account_Type
+INSERT INTO Account_Type (Account_Type_ID, Account_Type_Name)
+VALUES
+(1, 'Savings'),
+(2, 'Checking'),
+(3, 'Business');
+
+-- Insert values into Account
+INSERT INTO Account (Account_ID, Account_Type_ID, Opening_Date, Status)
+VALUES
+(1001, 1, '2024-01-01', 'Active'),
+(1002, 2, '2024-02-15', 'Closed'),
+(1003, 3, '2024-03-20', 'Active');
+
+-- Insert values into Branch_Location
+INSERT INTO Branch_Location (Location_ID, Location_Name)
+VALUES
+(1, 'Downtown'),
+(2, 'Uptown'),
+(3, 'Suburb');
+
+-- Insert values into Branch
+INSERT INTO Branch (Branch_ID, Branch_Name, Location_ID, Manager)
+VALUES
+(201, 'Main Branch', 1, 'David Lee'),
+(202, 'North Branch', 2, 'Emily Davis'),
+(203, 'South Branch', 3, 'Michael Scott');
+
+-- Insert values into Time_Dim
+INSERT INTO Time_Dim (Date_ID, Date, Day, Month, Quarter, Year)
+VALUES
+(1, '2024-11-01', 1, 11, 4, 2024),
+(2, '2024-11-02', 2, 11, 4, 2024),
+(3, '2024-11-03', 3, 11, 4, 2024);
+
+-- Insert values into Transaction_Fact
+INSERT INTO Transaction_Fact (Transaction_ID, Account_ID, Customer_ID, Branch_ID, Transaction_Amount, Transaction_Date)
+VALUES
+(5001, 1001, 101, 201, 250.75, 1),
+(5002, 1002, 102, 202, 1200.00, 2),
+(5003, 1003, 103, 203, 500.50, 3);
+
+//////////////////////////////////////////
+
+GALAXY SCHEMA
+
+-- Step 1: Create the Database
+CREATE DATABASE HealthcareEnterprise1;
+USE HealthcareEnterprise1;
+
+-- Step 2: Create Dimension Tables
+CREATE TABLE Patient_Dimension (
+    Patient_ID INT PRIMARY KEY,
+    Patient_Name VARCHAR(100),
+    Gender CHAR(1),
+    Age INT,
+    Address VARCHAR(255)
+);
+
+CREATE TABLE Doctor_Dimension (
+    Doctor_ID INT PRIMARY KEY,
+    Doctor_Name VARCHAR(100),
+    Specialty VARCHAR(50),
+    Contact_Number VARCHAR(15),
+    Experience_Years INT
+);
+
+CREATE TABLE Medication_Dimension (
+    Medication_ID INT PRIMARY KEY,
+    Medication_Name VARCHAR(100),
+    Manufacturer VARCHAR(100),
+    Dosage_Form VARCHAR(50),
+    Price_Per_Unit DECIMAL(10, 2)
+);
+
+CREATE TABLE Date_Dimension (
+    Date_ID DATE PRIMARY KEY,
+    Day_Of_Week VARCHAR(15),
+    Month_Name VARCHAR(15),
+    Quarter INT,
+    Year INT
+);
+
+-- Step 3: Create Fact Tables
+CREATE TABLE Patient_Visits_Fact (
+    Visit_ID INT PRIMARY KEY,
+    Patient_ID INT,
+    Doctor_ID INT,
+    Date_ID DATE,
+    Visit_Cost DECIMAL(10, 2),
+    FOREIGN KEY (Patient_ID) REFERENCES Patient_Dimension(Patient_ID),
+    FOREIGN KEY (Doctor_ID) REFERENCES Doctor_Dimension(Doctor_ID),
+    FOREIGN KEY (Date_ID) REFERENCES Date_Dimension(Date_ID)
+);
+
+CREATE TABLE Medication_Details_Fact (
+    Prescription_ID INT PRIMARY KEY,
+    Patient_ID INT,
+    Medication_ID INT,
+    Date_ID DATE,
+    Quantity INT,
+    Total_Cost DECIMAL(10, 2),
+    FOREIGN KEY (Patient_ID) REFERENCES Patient_Dimension(Patient_ID),
+    FOREIGN KEY (Medication_ID) REFERENCES Medication_Dimension(Medication_ID),
+    FOREIGN KEY (Date_ID) REFERENCES Date_Dimension(Date_ID)
+);
+
+-- Step 4: Insert Data into Dimension Tables
+INSERT INTO Patient_Dimension VALUES 
+(1, 'John Doe', 'M', 30, '123 Elm Street'),
+(2, 'Jane Smith', 'F', 25, '456 Maple Avenue'),
+(3, 'Alice Johnson', 'F', 40, '789 Oak Lane');
+
+INSERT INTO Doctor_Dimension VALUES 
+(1, 'Dr. Emily White', 'Cardiology', '9876543210', 10),
+(2, 'Dr. Michael Brown', 'Orthopedics', '8765432109', 15),
+(3, 'Dr. Sarah Green', 'Dermatology', '7654321098', 8);
+
+INSERT INTO Medication_Dimension VALUES 
+(1, 'Paracetamol', 'PharmaCorp', 'Tablet', 0.50),
+(2, 'Amoxicillin', 'HealthGen', 'Capsule', 1.00),
+(3, 'Ibuprofen', 'MediWell', 'Tablet', 0.75);
+
+INSERT INTO Date_Dimension VALUES 
+('2024-11-01', 'Friday', 'November', 4, 2024),
+('2024-11-02', 'Saturday', 'November', 4, 2024),
+('2024-11-03', 'Sunday', 'November', 4, 2024);
+
+-- Step 5: Insert Data into Fact Tables
+INSERT INTO Patient_Visits_Fact VALUES 
+(1, 1, 1, '2024-11-01', 200.00),
+(2, 2, 2, '2024-11-02', 150.00),
+(3, 3, 3, '2024-11-03', 300.00);
+
+INSERT INTO Medication_Details_Fact VALUES 
+(1, 1, 1, '2024-11-01', 10, 5.00),
+(2, 2, 2, '2024-11-02', 5, 5.00),
+(3, 3, 3, '2024-11-03', 20, 15.00);
+
+-- Step 6: Sample Queries
+
+-- a. Retrieve total visits and revenue by doctor
+SELECT 
+    d.Doctor_Name, 
+    COUNT(v.Visit_ID) AS Total_Visits, 
+    SUM(v.Visit_Cost) AS Total_Revenue
+FROM Patient_Visits_Fact v
+JOIN Doctor_Dimension d ON v.Doctor_ID = d.Doctor_ID
+GROUP BY d.Doctor_Name;
+
+-- b. Retrieve total medication cost by patient
+SELECT 
+    p.Patient_Name, 
+    SUM(m.Total_Cost) AS Total_Medication_Cost
+FROM Medication_Details_Fact m
+JOIN Patient_Dimension p ON m.Patient_ID = p.Patient_ID
+GROUP BY p.Patient_Name;
+
+-- c. Find visits and prescriptions on a specific date
+SELECT 
+    p.Patient_Name, 
+    v.Visit_Cost, 
+    md.Medication_Name, 
+    m.Total_Cost
+FROM Patient_Visits_Fact v
+JOIN Patient_Dimension p ON v.Patient_ID = p.Patient_ID
+JOIN Medication_Details_Fact m ON v.Patient_ID = m.Patient_ID
+JOIN Medication_Dimension md ON m.Medication_ID = md.Medication_ID
+WHERE v.Date_ID = '2024-11-01';
+
+
+-- d. Top 3 most prescribed medications
+SELECT 
+    md.Medication_Name, 
+    SUM(m.Quantity) AS Total_Quantity
+FROM Medication_Details_Fact m
+JOIN Medication_Dimension md ON m.Medication_ID = md.Medication_ID
+GROUP BY md.Medication_Name
+ORDER BY Total_Quantity DESC
+LIMIT 3;
+
+////////////////////////////////////
+
+APRIORI ALGO(Online Retail)
+import pandas as pd
+from itertools import combinations
+from tabulate import tabulate  # Install using pip install tabulate
+
+# Load the dataset
+file_path = 'bread basket.csv'  # Replace with your dataset path
+data = pd.read_csv(file_path)
+
+# Group items by transaction and remove duplicates
+transactions = data.groupby('Transaction')['Item'].apply(set).tolist()
+
+# Step 1: Create a function to calculate itemset support
+def get_support(itemset, transactions):
+    """Calculate the support of an itemset."""
+    count = sum(1 for transaction in transactions if itemset <= transaction)
+    return count / len(transactions)
+
+# Step 2: Generate frequent itemsets
+def apriori(transactions, min_support):
+    """Generate frequent itemsets using the Apriori algorithm."""
+    single_items = {item for transaction in transactions for item in transaction}
+    current_itemsets = [{item} for item in single_items]
+    frequent_itemsets = []
+
+    while current_itemsets:
+        # Calculate support for each itemset
+        itemset_support = [
+            (itemset, get_support(itemset, transactions)) 
+            for itemset in current_itemsets
+        ]
+        # Filter itemsets by min_support
+        itemset_support = [
+            (itemset, support) 
+            for itemset, support in itemset_support if support >= min_support
+        ]
+        frequent_itemsets.extend(itemset_support)
+        
+        # Generate new candidate itemsets (larger itemsets)
+        current_itemsets = [
+            i1 | i2 
+            for i, (i1, _) in enumerate(itemset_support) 
+            for j, (i2, _) in enumerate(itemset_support) if i < j and len(i1 | i2) == len(i1) + 1
+        ]
+    
+    return frequent_itemsets
+
+# Step 3: Generate association rules
+def generate_rules(frequent_itemsets, transactions, min_confidence):
+    """Generate association rules from frequent itemsets."""
+    rules = []
+    for itemset, support in frequent_itemsets:
+        if len(itemset) > 1:
+            for antecedent_size in range(1, len(itemset)):
+                antecedents = combinations(itemset, antecedent_size)
+                for antecedent in antecedents:
+                    antecedent = set(antecedent)
+                    consequent = itemset - antecedent
+                    confidence = get_support(itemset, transactions) / get_support(antecedent, transactions)
+                    if confidence >= min_confidence:
+                        rules.append((antecedent, consequent, confidence))
+    return rules
+
+# Apply Apriori algorithm
+min_support = 0.01
+min_confidence = 0.5
+frequent_itemsets = apriori(transactions, min_support)
+
+# Generate association rules
+rules = generate_rules(frequent_itemsets, transactions, min_confidence)
+
+# Format and display results
+print("Frequent Itemsets:")
+frequent_itemsets_table = [
+    {"Itemset": ', '.join(itemset), "Support": round(support, 2)} 
+    for itemset, support in frequent_itemsets
+]
+print(tabulate(frequent_itemsets_table, headers="keys", tablefmt="pretty"))
+
+print("\nAssociation Rules:")
+rules_table = [
+    {"Antecedent": ', '.join(antecedent), "Consequent": ', '.join(consequent), "Confidence": round(confidence, 2)}
+    for antecedent, consequent, confidence in rules
+]
+print(tabulate(rules_table, headers="keys", tablefmt="pretty"))
+
+////////////////////////////////
+
+KMEANS CLUSTERING
+from sklearn.cluster import KMeans
+import pandas as pd
+from matplotlib import pyplot as plt
+
+# Load dataset
+df = pd.read_csv("C:\\Users\Anagha\Downloads\income.csv")
+
+# Scatter plot of the original data
+plt.scatter(df['Age'], df['Income($)']) plt.xlabel('Age') plt.ylabel('Income($)')
+plt.show()
+
+# KMeans clustering
+km = KMeans(n_clusters=3)
+y_predicted = km.fit_predict(df[['Age', 'Income($)']])
+
+# Add the cluster predictions to the dataframe df['cluster'] = y_predicted
+# Display the first few rows of the dataframe print(df.head())
+# Visualize the clusters df1 = df[df.cluster == 0] df2 = df[df.cluster == 1] df3 = df[df.cluster == 2]
+
+plt.scatter(df1.Age, df1['Income($)'], color='green', label='Cluster 1') plt.scatter(df2.Age, df2['Income($)'], color='red', label='Cluster 2') plt.scatter(df3.Age, df3['Income($)'], color='black', label='Cluster 3')
+
+# Plot the centroids
+plt.scatter(km.cluster_centers_[:, 0], km.cluster_centers_[:, 1], color='purple', marker='*', label='Centroid')
+plt.xlabel('Age') plt.ylabel('Income($)') plt.legend()
+plt.show()
+
+///////////////////////////////////////////////////////
+
+DECISION TREE ALGO(E-COMMERCE CUSTOMER BEHAVIOUR)
+# Import necessary libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load dataset
+file_path = r'D:\SEM 5\dwdm lab\apriori\E-commerce Customer Behavior - Sheet1.csv'  # raw string for the file path
+df = pd.read_csv(file_path)
+
+# Preprocessing - Encoding categorical features using LabelEncoder
+label_encoder = LabelEncoder()
+df['Gender'] = label_encoder.fit_transform(df['Gender'])
+df['City'] = label_encoder.fit_transform(df['City'])
+df['Membership Type'] = label_encoder.fit_transform(df['Membership Type'])
+df['Discount Applied'] = df['Discount Applied'].apply(lambda x: 1 if x == 'TRUE' else 0)
+
+# Separating features and target
+X = df.drop('Satisfaction Level', axis=1)  # Features
+y = df['Satisfaction Level']  # Target (Satisfaction Level)
+y = label_encoder.fit_transform(y)  # Encoding the target variable
+
+# Splitting the dataset into training and testing sets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Create a DecisionTreeClassifier
+clf = DecisionTreeClassifier(random_state=42)
+
+# Train the classifier
+clf.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = clf.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy: {accuracy * 100:.2f}%')
+
+# Print the classification report
+print("Classification Report:")
+print(classification_report(y_test, y_pred, zero_division=1))
+
+# Visualize the Decision Tree with limited depth for better readability
+plt.figure(figsize=(25, 15))  # Increase figure size to improve clarity
+plot_tree(clf, 
+          filled=True, 
+          feature_names=X.columns, 
+          class_names=label_encoder.classes_, 
+          max_depth=3,  # Limit tree depth for readability
+          fontsize=12)  # Adjusting font size for readability
+plt.title('Decision Tree')
+plt.show()  # Ensure the decision tree plot is shown
+
+# Confusion Matrix
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+# Plotting the confusion matrix
+plt.figure(figsize=(8, 6))  # Adjust figure size for better clarity
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=label_encoder.classes_, yticklabels=label_encoder.classes_)
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.title('Confusion Matrix')
+plt.show()  # Ensure the confusion matrix plot is shown
+
+
+                                 OR
+
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.cluster import KMeans
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+df = pd.read_csv('/Users/anaghapatil/Downloads/Mall_Customers.csv.xls')
+
+df['Gender'] = LabelEncoder().fit_transform(df['Gender'])
+
+X = df[['Gender', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']]
+
+k = 3  # Define the number of clusters
+kmeans = KMeans(n_clusters=k, random_state=42)
+pseudo_labels = kmeans.fit_predict(X)
+
+
+df['Cluster_Label'] = pseudo_labels
+X_train, X_test, y_train, y_test = train_test_split(X, pseudo_labels, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+decision_tree = DecisionTreeClassifier(random_state=42, max_depth=5, min_samples_split=10, min_samples_leaf=5)
+decision_tree.fit(X_train_scaled, y_train)
+
+y_pred = decision_tree.predict(X_test_scaled)
+accuracy = accuracy_score(y_test, y_pred)
+report = classification_report(y_test, y_pred)
+
+print(f'Accuracy: {accuracy:.2f}')
+print("\nClassification Report:\n", report)
+
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="YlGnBu", cbar=False, 
+            xticklabels=[f'Cluster {i}' for i in range(k)], 
+            yticklabels=[f'Cluster {i}' for i in range(k)])
+plt.title("Confusion Matrix for Decision Tree Predictions")
+plt.xlabel("Predicted Cluster")
+plt.ylabel("Actual Cluster")
+plt.show()
+
+
+/////////////////////////////////////////////////////
+
+NAIVE BAYES(NAIVE-BAYES-CLASS.CSV)
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# Load the data
+data = pd.read_csv("C:\\Users\Anagha\Downloads\dwdm9data\\Naive-Bayes- Classification-Data.csv", header=None, names=['glucose', 'blood_pressure', 'diabetes'])
+
+# Convert data to numeric type
+data = data.apply(pd.to_numeric, errors='coerce')
+
+# Drop any rows with NaN values data = data.dropna()
+# Split features and target
+X = data[['glucose', 'blood_pressure']]
+y = data['diabetes']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Initialize and train the Naive Bayes classifier
+nb_classifier = GaussianNB() 
+nb_classifier.fit(X_train, y_train)
+
+# Make predictions
+y_pred = nb_classifier.predict(X_test)
+
+# Calculate accuracy
+accuracy = accuracy_score(y_test, y_pred)
+
+# Generate confusion matrix and classification report conf_matrix = confusion_matrix(y_test, y_pred) 
+class_report = classification_report(y_test, y_pred)
+
+print(f"Accuracy: {accuracy}") 
+print("\nConfusion Matrix:") 
+print(conf_matrix)
+print("\nClassification Report:")
+print(class_report)
+
+# Function to calculate class probabilities
+def calculate_class_probabilities(glucose, blood_pressure):
+    feature_vector = np.array([[glucose, blood_pressure]]) 
+    probabilities = nb_classifier.predict_proba(feature_vector)[0] 
+    return probabilities
+# Example prediction example_glucose = 50
+example_blood_pressure = 75
+probabilities = calculate_class_probabilities(example_glucose, example_blood_pressure)
+print(f"\nProbabilities for Glucose={example_glucose}, Blood Pressure={example_blood_pressure}:")
+print(f"P(No Diabetes | X) = {probabilities[0]:.4f}")
+print(f"P(Diabetes | X) = {probabilities[1]:.4f}")
+
+////////////////////////////////////////////////////////////////
+
+HIERARCHICAL CLUSTERING(employee_data.csv)
+# Import required libraries
+import pandas as pds
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+import scipy.cluster.hierarchy as sch
+import matplotlib.pyplot as plt
+
+# Step 1: Load the dataset
+file_path = 'D:/SEM 5/dwdm lab/apriori/employee_data.csv'
+data = pd.read_csv(file_path)
+
+# Step 2: Select relevant features for clustering
+features = data[['Age', 'Salary', 'Years at Company']]
+
+# Step 3: Standardize the data
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(features)
+
+# Step 4: Visualize the dendrogram to determine the optimal number of clusters
+plt.figure(figsize=(10, 7))
+plt.title('Dendrogram for Hierarchical Clustering')
+dendrogram = sch.dendrogram(sch.linkage(scaled_features, method='ward'))
+plt.xlabel('Employees')
+plt.ylabel('Euclidean Distances')
+plt.show()
+
+# Perform agglomerative hierarchical clustering
+n_clusters = 3  # Set based on dendrogram analysis
+hc = AgglomerativeClustering(n_clusters=n_clusters, metric='euclidean', linkage='ward')
+data['Cluster'] = hc.fit_predict(scaled_features)
+
+
+# Step 6: Calculate the silhouette score
+sil_score = silhouette_score(scaled_features, data['Cluster'])
+print(f"Silhouette Score: {sil_score:.3f}")
+
+# Step 7: Display the data with assigned clusters
+print(data[['Employee ID', 'Department', 'Age', 'Salary', 'Years at Company', 'Cluster']])
+
+# Step 8: Visualize the clusters (2D visualization using first two features)
+plt.figure(figsize=(8, 6))
+plt.scatter(scaled_features[:, 0], scaled_features[:, 1], c=data['Cluster'], cmap='viridis', s=50)
+plt.title('Cluster Visualization')
+plt.xlabel('Feature 1 (e.g., Age)')
+plt.ylabel('Feature 2 (e.g., Salary)')
+plt.colorbar(label='Cluster')
+plt.show()
+
+

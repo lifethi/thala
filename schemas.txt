@@ -1,0 +1,425 @@
+schemas
+
+galaxy:
+
+-- Step 1: Create the Database
+CREATE DATABASE HealthcareEnterprise1;
+USE HealthcareEnterprise1;
+
+-- Step 2: Create Dimension Tables
+CREATE TABLE Patient_Dimension (
+    Patient_ID INT PRIMARY KEY,
+    Patient_Name VARCHAR(100),
+    Gender CHAR(1),
+    Age INT,
+    Address VARCHAR(255)
+);
+
+CREATE TABLE Doctor_Dimension (
+    Doctor_ID INT PRIMARY KEY,
+    Doctor_Name VARCHAR(100),
+    Specialty VARCHAR(50),
+    Contact_Number VARCHAR(15),
+    Experience_Years INT
+);
+
+CREATE TABLE Medication_Dimension (
+    Medication_ID INT PRIMARY KEY,
+    Medication_Name VARCHAR(100),
+    Manufacturer VARCHAR(100),
+    Dosage_Form VARCHAR(50),
+    Price_Per_Unit DECIMAL(10, 2)
+);
+
+CREATE TABLE Date_Dimension (
+    Date_ID DATE PRIMARY KEY,
+    Day_Of_Week VARCHAR(15),
+    Month_Name VARCHAR(15),
+    Quarter INT,
+    Year INT
+);
+
+-- Step 3: Create Fact Tables
+CREATE TABLE Patient_Visits_Fact (
+    Visit_ID INT PRIMARY KEY,
+    Patient_ID INT,
+    Doctor_ID INT,
+    Date_ID DATE,
+    Visit_Cost DECIMAL(10, 2),
+    FOREIGN KEY (Patient_ID) REFERENCES Patient_Dimension(Patient_ID),
+    FOREIGN KEY (Doctor_ID) REFERENCES Doctor_Dimension(Doctor_ID),
+    FOREIGN KEY (Date_ID) REFERENCES Date_Dimension(Date_ID)
+);
+
+CREATE TABLE Medication_Details_Fact (
+    Prescription_ID INT PRIMARY KEY,
+    Patient_ID INT,
+    Medication_ID INT,
+    Date_ID DATE,
+    Quantity INT,
+    Total_Cost DECIMAL(10, 2),
+    FOREIGN KEY (Patient_ID) REFERENCES Patient_Dimension(Patient_ID),
+    FOREIGN KEY (Medication_ID) REFERENCES Medication_Dimension(Medication_ID),
+    FOREIGN KEY (Date_ID) REFERENCES Date_Dimension(Date_ID)
+);
+
+-- Step 4: Insert Data into Dimension Tables
+INSERT INTO Patient_Dimension VALUES 
+(1, 'John Doe', 'M', 30, '123 Elm Street'),
+(2, 'Jane Smith', 'F', 25, '456 Maple Avenue'),
+(3, 'Alice Johnson', 'F', 40, '789 Oak Lane');
+
+INSERT INTO Doctor_Dimension VALUES 
+(1, 'Dr. Emily White', 'Cardiology', '9876543210', 10),
+(2, 'Dr. Michael Brown', 'Orthopedics', '8765432109', 15),
+(3, 'Dr. Sarah Green', 'Dermatology', '7654321098', 8);
+
+INSERT INTO Medication_Dimension VALUES 
+(1, 'Paracetamol', 'PharmaCorp', 'Tablet', 0.50),
+(2, 'Amoxicillin', 'HealthGen', 'Capsule', 1.00),
+(3, 'Ibuprofen', 'MediWell', 'Tablet', 0.75);
+
+INSERT INTO Date_Dimension VALUES 
+('2024-11-01', 'Friday', 'November', 4, 2024),
+('2024-11-02', 'Saturday', 'November', 4, 2024),
+('2024-11-03', 'Sunday', 'November', 4, 2024);
+
+-- Step 5: Insert Data into Fact Tables
+INSERT INTO Patient_Visits_Fact VALUES 
+(1, 1, 1, '2024-11-01', 200.00),
+(2, 2, 2, '2024-11-02', 150.00),
+(3, 3, 3, '2024-11-03', 300.00);
+
+INSERT INTO Medication_Details_Fact VALUES 
+(1, 1, 1, '2024-11-01', 10, 5.00),
+(2, 2, 2, '2024-11-02', 5, 5.00),
+(3, 3, 3, '2024-11-03', 20, 15.00);
+
+-- Step 6: Sample Queries
+
+-- a. Retrieve total visits and revenue by doctor
+SELECT 
+    d.Doctor_Name, 
+    COUNT(v.Visit_ID) AS Total_Visits, 
+    SUM(v.Visit_Cost) AS Total_Revenue
+FROM Patient_Visits_Fact v
+JOIN Doctor_Dimension d ON v.Doctor_ID = d.Doctor_ID
+GROUP BY d.Doctor_Name;
+
+-- b. Retrieve total medication cost by patient
+SELECT 
+    p.Patient_Name, 
+    SUM(m.Total_Cost) AS Total_Medication_Cost
+FROM Medication_Details_Fact m
+JOIN Patient_Dimension p ON m.Patient_ID = p.Patient_ID
+GROUP BY p.Patient_Name;
+
+-- c. Find visits and prescriptions on a specific date
+SELECT 
+    p.Patient_Name, 
+    v.Visit_Cost, 
+    md.Medication_Name, 
+    m.Total_Cost
+FROM Patient_Visits_Fact v
+JOIN Patient_Dimension p ON v.Patient_ID = p.Patient_ID
+JOIN Medication_Details_Fact m ON v.Patient_ID = m.Patient_ID
+JOIN Medication_Dimension md ON m.Medication_ID = md.Medication_ID
+WHERE v.Date_ID = '2024-11-01';
+
+
+-- d. Top 3 most prescribed medications
+SELECT 
+    md.Medication_Name, 
+    SUM(m.Quantity) AS Total_Quantity
+FROM Medication_Details_Fact m
+JOIN Medication_Dimension md ON m.Medication_ID = md.Medication_ID
+GROUP BY md.Medication_Name
+ORDER BY Total_Quantity DESC
+LIMIT 3;
+
+
+
+snowflake :
+-- Step 1: Create the Database
+CREATE DATABASE HealthcareEnterpriseSnowflake;
+USE HealthcareEnterpriseSnowflake;
+
+-- Step 2: Create Dimension Tables
+
+-- Patient-related dimensions
+CREATE TABLE Patient_Gender_Dimension (
+    Gender_ID INT PRIMARY KEY,
+    Gender VARCHAR(10)
+);
+
+CREATE TABLE Patient_Age_Group_Dimension (
+    Age_Group_ID INT PRIMARY KEY,
+    Age_Group VARCHAR(50)
+);
+
+CREATE TABLE Patient_Dimension (
+    Patient_ID INT PRIMARY KEY,
+    Patient_Name VARCHAR(100),
+    Gender_ID INT,
+    Age_Group_ID INT,
+    Address VARCHAR(255),
+    FOREIGN KEY (Gender_ID) REFERENCES Patient_Gender_Dimension(Gender_ID),
+    FOREIGN KEY (Age_Group_ID) REFERENCES Patient_Age_Group_Dimension(Age_Group_ID)
+);
+
+-- Doctor-related dimensions
+CREATE TABLE Doctor_Specialty_Dimension (
+    Specialty_ID INT PRIMARY KEY,
+    Specialty VARCHAR(50)
+);
+
+CREATE TABLE Doctor_Dimension (
+    Doctor_ID INT PRIMARY KEY,
+    Doctor_Name VARCHAR(100),
+    Specialty_ID INT,
+    Contact_Number VARCHAR(15),
+    Experience_Years INT,
+    FOREIGN KEY (Specialty_ID) REFERENCES Doctor_Specialty_Dimension(Specialty_ID)
+);
+
+-- Medication-related dimensions
+CREATE TABLE Manufacturer_Dimension (
+    Manufacturer_ID INT PRIMARY KEY,
+    Manufacturer_Name VARCHAR(100)
+);
+
+CREATE TABLE Medication_Dimension (
+    Medication_ID INT PRIMARY KEY,
+    Medication_Name VARCHAR(100),
+    Manufacturer_ID INT,
+    Dosage_Form VARCHAR(50),
+    Price_Per_Unit DECIMAL(10, 2),
+    FOREIGN KEY (Manufacturer_ID) REFERENCES Manufacturer_Dimension(Manufacturer_ID)
+);
+
+-- Date dimension
+CREATE TABLE Date_Dimension (
+    Date_ID DATE PRIMARY KEY,
+    Day_Of_Week VARCHAR(15),
+    Month_Name VARCHAR(15),
+    Quarter INT,
+    Year INT
+);
+
+-- Step 3: Create the Fact Table
+
+CREATE TABLE Patient_Visits_Fact (
+    Visit_ID INT PRIMARY KEY,
+    Patient_ID INT,
+    Doctor_ID INT,
+    Medication_ID INT,
+    Date_ID DATE,
+    Visit_Cost DECIMAL(10, 2),
+    Medication_Cost DECIMAL(10, 2),
+    FOREIGN KEY (Patient_ID) REFERENCES Patient_Dimension(Patient_ID),
+    FOREIGN KEY (Doctor_ID) REFERENCES Doctor_Dimension(Doctor_ID),
+    FOREIGN KEY (Medication_ID) REFERENCES Medication_Dimension(Medication_ID),
+    FOREIGN KEY (Date_ID) REFERENCES Date_Dimension(Date_ID)
+);
+
+-- Step 4: Insert Data into Dimension Tables
+
+-- Patient Gender and Age Group Dimensions
+INSERT INTO Patient_Gender_Dimension VALUES 
+(1, 'Male'),
+(2, 'Female');
+
+INSERT INTO Patient_Age_Group_Dimension VALUES 
+(1, '20-30'),
+(2, '30-40'),
+(3, '40-50');
+
+-- Patient Table
+INSERT INTO Patient_Dimension VALUES 
+(1, 'John Doe', 1, 1, '123 Elm Street'),
+(2, 'Jane Smith', 2, 2, '456 Maple Avenue'),
+(3, 'Alice Johnson', 2, 3, '789 Oak Lane');
+
+-- Doctor Specialty Dimension
+INSERT INTO Doctor_Specialty_Dimension VALUES 
+(1, 'Cardiology'),
+(2, 'Orthopedics'),
+(3, 'Dermatology');
+
+-- Doctor Table
+INSERT INTO Doctor_Dimension VALUES 
+(1, 'Dr. Emily White', 1, '9876543210', 10),
+(2, 'Dr. Michael Brown', 2, '8765432109', 15),
+(3, 'Dr. Sarah Green', 3, '7654321098', 8);
+
+-- Medication Manufacturer Dimension
+INSERT INTO Manufacturer_Dimension VALUES 
+(1, 'PharmaCorp'),
+(2, 'HealthGen'),
+(3, 'MediWell');
+
+-- Medication Table
+INSERT INTO Medication_Dimension VALUES 
+(1, 'Paracetamol', 1, 'Tablet', 0.50),
+(2, 'Amoxicillin', 2, 'Capsule', 1.00),
+(3, 'Ibuprofen', 3, 'Tablet', 0.75);
+
+-- Date Dimension Table
+INSERT INTO Date_Dimension VALUES 
+('2024-11-01', 'Friday', 'November', 4, 2024),
+('2024-11-02', 'Saturday', 'November', 4, 2024),
+('2024-11-03', 'Sunday', 'November', 4, 2024);
+
+-- Step 5: Insert Data into the Fact Table
+
+-- Patient Visits Fact
+INSERT INTO Patient_Visits_Fact VALUES 
+(1, 1, 1, 1, '2024-11-01', 200.00, 5.00),
+(2, 2, 2, 2, '2024-11-02', 150.00, 10.00),
+(3, 3, 3, 3, '2024-11-03', 300.00, 15.00);
+
+-- Step 6: Sample Queries
+
+-- a. Retrieve total visits and revenue by doctor
+SELECT 
+    d.Doctor_Name, 
+    COUNT(v.Visit_ID) AS Total_Visits, 
+    SUM(v.Visit_Cost) AS Total_Revenue
+FROM Patient_Visits_Fact v
+JOIN Doctor_Dimension d ON v.Doctor_ID = d.Doctor_ID
+GROUP BY d.Doctor_Name;
+
+-- b. Retrieve total medication cost by patient
+SELECT 
+    p.Patient_Name, 
+    SUM(v.Medication_Cost) AS Total_Medication_Cost
+FROM Patient_Visits_Fact v
+JOIN Patient_Dimension p ON v.Patient_ID = p.Patient_ID
+GROUP BY p.Patient_Name;
+
+-- c. Find visits and prescriptions on a specific date
+SELECT 
+    p.Patient_Name, 
+    v.Visit_Cost, 
+    md.Medication_Name, 
+    v.Medication_Cost
+FROM Patient_Visits_Fact v
+JOIN Patient_Dimension p ON v.Patient_ID = p.Patient_ID
+JOIN Medication_Dimension md ON v.Medication_ID = md.Medication_ID
+WHERE v.Date_ID = '2024-11-01';
+
+-- d. Top 3 most prescribed medications
+SELECT 
+    md.Medication_Name, 
+    COUNT(v.Medication_ID) AS Prescription_Count
+FROM Patient_Visits_Fact v
+JOIN Medication_Dimension md ON v.Medication_ID = md.Medication_ID
+GROUP BY md.Medication_Name
+ORDER BY Prescription_Count DESC
+LIMIT 3;
+
+
+
+
+kmeans cluster:
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+import matplotlib.pyplot as plt
+
+# Load the Excel file
+file_path = 'D:/SEM 5/dwdm lab/apriori/Online Retail.xlsx'  # replace with your file path
+xls = pd.ExcelFile(file_path)
+
+# Load the data
+df = pd.read_excel(xls, sheet_name='Online Retail')
+
+# Step 1: Clean the data by removing rows with missing CustomerID
+df_clean = df.dropna(subset=['CustomerID']).copy()
+
+# Step 2: Create a new column "TotalAmountSpent" (Quantity * UnitPrice)
+df_clean.loc[:, 'TotalAmountSpent'] = df_clean['Quantity'] * df_clean['UnitPrice']
+
+# Step 3: Group by CustomerID to calculate the total amount spent by each customer
+customer_data = df_clean.groupby('CustomerID').agg({
+    'TotalAmountSpent': 'sum'
+}).reset_index()
+
+# Step 4: Scale the data
+scaler = StandardScaler()
+customer_data_scaled = scaler.fit_transform(customer_data[['TotalAmountSpent']])
+
+# Step 5: Apply K-means clustering
+kmeans = KMeans(n_clusters=3, random_state=42)
+customer_data['Cluster'] = kmeans.fit_predict(customer_data_scaled)
+
+# Step 6: Calculate the Silhouette Score
+sil_score = silhouette_score(customer_data_scaled, customer_data['Cluster'])
+print(f"Silhouette Score: {sil_score}")
+
+# Step 7: Visualize the clusters
+plt.scatter(customer_data['CustomerID'], customer_data['TotalAmountSpent'], c=customer_data['Cluster'], cmap='viridis')
+plt.xlabel('CustomerID')
+plt.ylabel('TotalAmountSpent')
+plt.title('Customer Clusters based on Spending')
+plt.show()
+
+# Step 8: Analyze the cluster centers
+print("Cluster Centers:")
+print(kmeans.cluster_centers_)
+
+
+hierchical:
+# Import required libraries
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+import scipy.cluster.hierarchy as sch
+import matplotlib.pyplot as plt
+
+# Step 1: Load the dataset
+file_path = 'D:/SEM 5/dwdm lab/apriori/employee_data.csv'
+data = pd.read_csv(file_path)
+
+# Step 2: Select relevant features for clustering
+features = data[['Age', 'Salary', 'Years at Company']]
+
+# Step 3: Standardize the data
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(features)
+
+# Step 4: Visualize the dendrogram to determine the optimal number of clusters
+plt.figure(figsize=(10, 7))
+plt.title('Dendrogram for Hierarchical Clustering')
+dendrogram = sch.dendrogram(sch.linkage(scaled_features, method='ward'))
+plt.xlabel('Employees')
+plt.ylabel('Euclidean Distances')
+plt.show()
+
+# Perform agglomerative hierarchical clustering
+n_clusters = 3  # Set based on dendrogram analysis
+hc = AgglomerativeClustering(n_clusters=n_clusters, metric='euclidean', linkage='ward')
+data['Cluster'] = hc.fit_predict(scaled_features)
+
+
+# Step 6: Calculate the silhouette score
+sil_score = silhouette_score(scaled_features, data['Cluster'])
+print(f"Silhouette Score: {sil_score:.3f}")
+
+# Step 7: Display the data with assigned clusters
+print(data[['Employee ID', 'Department', 'Age', 'Salary', 'Years at Company', 'Cluster']])
+
+# Step 8: Visualize the clusters (2D visualization using first two features)
+plt.figure(figsize=(8, 6))
+plt.scatter(scaled_features[:, 0], scaled_features[:, 1], c=data['Cluster'], cmap='viridis', s=50)
+plt.title('Cluster Visualization')
+plt.xlabel('Feature 1 (e.g., Age)')
+plt.ylabel('Feature 2 (e.g., Salary)')
+plt.colorbar(label='Cluster')
+plt.show()
+
+
+
